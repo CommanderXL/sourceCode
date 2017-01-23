@@ -86,8 +86,10 @@ var Zepto = (function() {
     return isObject(obj) && !isWindow(obj) && Object.getPrototypeOf(obj) == Object.prototype
   }
   
-  //类数组对象的判断
+  //  类数组对象的判断
+  //  1. 对象  2. 数组length 
   function likeArray(obj) {
+    //  逻辑与操作符的用法. 可以翻笔记
     var length = !!obj && 'length' in obj && obj.length,
       type = $.type(obj)
     //  window对象也是一个array-like object。 
@@ -100,7 +102,9 @@ var Zepto = (function() {
 
   function compact(array) { return filter.call(array, function(item){ return item != null }) }
   function flatten(array) { return array.length > 0 ? $.fn.concat.apply([], array) : array }
+  //  驼峰写法
   camelize = function(str){ return str.replace(/-+(.)?/g, function(match, chr){ return chr ? chr.toUpperCase() : '' }) }
+  //  下划线写法
   function dasherize(str) {
     return str.replace(/::/g, '/')
            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
@@ -119,6 +123,7 @@ var Zepto = (function() {
     return (typeof value == "number" && !cssNumber[dasherize(name)]) ? value + "px" : value
   }
 
+  //  defaultDisplay ???
   function defaultDisplay(nodeName) {
     var element, display
     if (!elementDisplay[nodeName]) {
@@ -132,12 +137,14 @@ var Zepto = (function() {
     return elementDisplay[nodeName]
   }
 
+  //  获取元素的第一层级的标签子节点
   function children(element) {
     return 'children' in element ?
       slice.call(element.children) :
       $.map(element.childNodes, function(node){ if (node.nodeType == 1) return node })
   }
 
+  //  生成zepto实例
   function Z(dom, selector) {
     var i, len = dom ? dom.length : 0
     for (i = 0; i < len; i++) this[i] = dom[i]
@@ -241,17 +248,25 @@ var Zepto = (function() {
   // function just call `$.zepto.init, which makes the implementation
   // details of selecting nodes and creating Zepto collections
   // patchable in plugins.
+  //  $ = function(selector, context) {
+  //  return zepto.init(selector, context);
+  //}
   $ = function(selector, context){
     return zepto.init(selector, context)
   }
 
+  //  对象的拓展, 是否为深复制
   function extend(target, source, deep) {
     for (key in source)
+      //  是否为深克隆
       if (deep && (isPlainObject(source[key]) || isArray(source[key]))) {
+        //  目标属性是否为plainObject
         if (isPlainObject(source[key]) && !isPlainObject(target[key]))
           target[key] = {}
+        //  目标属性是否为array
         if (isArray(source[key]) && !isArray(target[key]))
           target[key] = []
+        //  深度克隆
         extend(target[key], source[key], deep)
       }
       else if (source[key] !== undefined) target[key] = source[key]
@@ -259,6 +274,7 @@ var Zepto = (function() {
 
   // Copy all but undefined properties from one or more
   // objects to the `target` object.
+  // 将其他对象的非undefined属性copy到目标对象上. 注意这个地方参数只有一个,通过arguments去获取传入的其他参数
   $.extend = function(target){
     var deep, args = slice.call(arguments, 1)
     if (typeof target == 'boolean') {
@@ -272,6 +288,10 @@ var Zepto = (function() {
   // `$.zepto.qsa` is Zepto's CSS selector implementation which
   // uses `document.querySelectorAll` and optimizes for some special cases, like `#id`.
   // This method can be overridden in plugins.
+  //  document.querySelectorAll()
+  //  可以学习下这个地方判断是否为id或class属性的方式
+  //  对于id的获取还是getElementById
+  //  document.querySelector和document.querySelectorAll都返回的是一个array-like object
   zepto.qsa = function(element, selector){
     var found,
         maybeID = selector[0] == '#',
@@ -279,8 +299,8 @@ var Zepto = (function() {
         nameOnly = maybeID || maybeClass ? selector.slice(1) : selector, // Ensure that a 1 char tag name still gets checked
         isSimple = simpleSelectorRE.test(nameOnly)
     return (element.getElementById && isSimple && maybeID) ? // Safari DocumentFragment doesn't have getElementById
-      ( (found = element.getElementById(nameOnly)) ? [found] : [] ) :
-      (element.nodeType !== 1 && element.nodeType !== 9 && element.nodeType !== 11) ? [] :
+      ( (found = element.getElementById(nameOnly)) ? [found] : [] ) :       //  返回通过id来获取的dom
+      (element.nodeType !== 1 && element.nodeType !== 9 && element.nodeType !== 11) ? [] :  //  如果element不是dom节点等内容 1: tag name, 9: document, 11: fragment 
       slice.call(
         isSimple && !maybeID && element.getElementsByClassName ? // DocumentFragment doesn't have getElementsByClassName/TagName
           maybeClass ? element.getElementsByClassName(nameOnly) : // If it's simple, it could be a class
@@ -289,6 +309,7 @@ var Zepto = (function() {
       )
   }
 
+  //  
   function filtered(nodes, selector) {
     return selector == null ? $(nodes) : $(nodes).filter(selector)
   }
@@ -328,6 +349,7 @@ var Zepto = (function() {
   // "08"    => "08"
   // JSON    => parse if valid
   // String  => self
+  // 参数的转化. 将字符串转化为相对应的数据类型
   function deserializeValue(value) {
     try {
       return value ?
@@ -349,6 +371,7 @@ var Zepto = (function() {
   $.isArray = isArray
   $.isPlainObject = isPlainObject
 
+  //  判断是否为空对象的方法
   $.isEmptyObject = function(obj) {
     var name
     for (name in obj) return false
